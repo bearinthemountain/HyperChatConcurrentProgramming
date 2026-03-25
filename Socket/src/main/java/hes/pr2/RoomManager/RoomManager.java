@@ -3,12 +3,22 @@ package hes.pr2.RoomManager;
 import hes.pr2.model.client.Client;
 import hes.pr2.model.room.Room;
 
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class RoomManager {
     public ConcurrentHashMap<Room, Set<Client>> concurrentHashMap = new ConcurrentHashMap<>();
 
+
+    // Dans votre constructeur ou une méthode d'initialisation
+    public void initRooms() {
+        List<String> defaultNames = Arrays.asList("Général", "Gaming", "Aide");
+
+        for (String name : defaultNames) {
+            // On utilise Collections.newSetFromMap pour un Set thread-safe
+            concurrentHashMap.put(new Room(name, UUID.randomUUID()), Collections.newSetFromMap(new ConcurrentHashMap<>()));
+        }
+    }
 
     public void join(Client client, String roomName){
         Boolean found = false;
@@ -20,6 +30,7 @@ public class RoomManager {
                 clientList.add(client);
                 concurrentHashMap.put(roomToTry, clientList);
                 System.out.println("Room founded and client added " + roomToTry.getRoomName() + " : " + client.getPseudo() );
+                found = true;
             }
         }
     }

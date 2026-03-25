@@ -13,15 +13,12 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.StructuredTaskScope;
 
 public class ServerWhatsapp {
 
     // On les met ici pour qu'ils soient accessibles par toutes les méthodes
-    private final RoomManager roomManager = new RoomManager();
+    public final RoomManager roomManager = new RoomManager();
     private final BroadCastManager broadCastManager = new BroadCastManager();
 
     static void main(String[] args) {
@@ -31,6 +28,7 @@ public class ServerWhatsapp {
 
     public void startServer() {
         System.out.println("🚀 HyperChat démarré...");
+        roomManager.initRooms();
 
         try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
             try (ServerSocket serverSocket = new ServerSocket(8080)) {
@@ -64,7 +62,7 @@ public class ServerWhatsapp {
             String name = reader.readLine();
 
             Client client = new Client(UUID.randomUUID(), name);
-            roomManager.join(client, "General");
+            roomManager.join(client, "Général");
 
             writer.println("Bienvenue " + name);
 
