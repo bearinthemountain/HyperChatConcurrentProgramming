@@ -28,6 +28,7 @@ public class RoomManager {
             if(roomToTry.getRoomName() == roomName){
                 Set<Client> clientList = concurrentHashMap.get(roomToTry);
                 clientList.add(client);
+                client.setRoom(roomToTry);
                 concurrentHashMap.put(roomToTry, clientList);
                 System.out.println("Room founded and client added " + roomToTry.getRoomName() + " : " + client.getPseudo() );
                 found = true;
@@ -45,5 +46,16 @@ public class RoomManager {
                 concurrentHashMap.put(roomToTry, clientList);
             }
         }
+    }
+
+    public Set<Client> getClient(){
+        boolean found = false;
+        Set<Client> clients = null;
+        ConcurrentHashMap.KeySetView<Room, Set<Client>> keySetView = concurrentHashMap.keySet();
+        while(keySetView.iterator().hasNext() && !found){
+            Room roomTotry = keySetView.iterator().next();
+            clients = concurrentHashMap.get(roomTotry);
+        }
+        return clients;
     }
 }

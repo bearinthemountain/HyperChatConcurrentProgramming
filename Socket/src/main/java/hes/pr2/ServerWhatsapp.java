@@ -19,7 +19,7 @@ public class ServerWhatsapp {
 
     // On les met ici pour qu'ils soient accessibles par toutes les méthodes
     public final RoomManager roomManager = new RoomManager();
-    private final BroadCastManager broadCastManager = new BroadCastManager();
+    private final BroadCastManager broadCastManager = new BroadCastManager(roomManager);
 
     static void main(String[] args) {
         ServerWhatsapp server = new ServerWhatsapp();
@@ -58,10 +58,13 @@ public class ServerWhatsapp {
              var reader = new BufferedReader(new InputStreamReader(socketClient.getInputStream()));
              var writer = new PrintWriter(socketClient.getOutputStream(), true)) {
 
+
             writer.println("Welcome, please put your pseudo :");
             String name = reader.readLine();
 
             Client client = new Client(UUID.randomUUID(), name);
+            client.reader = reader;
+            client.writer = writer;
             roomManager.join(client, "Général");
 
             writer.println("Bienvenue " + name);
@@ -69,6 +72,8 @@ public class ServerWhatsapp {
             // IMPORTANT : La boucle de vie du client
             String line;
             while ((line = reader.readLine()) != null) {
+                String message = reader.readLine();
+                broadCastManager.send(client, client.getRoom(), message);
                 // On utilise le broadcastManager ici
             //    broadCastManager.broadcast("General", name + ": " + line);
             }
