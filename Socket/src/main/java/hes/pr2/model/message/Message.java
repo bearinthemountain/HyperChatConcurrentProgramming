@@ -7,4 +7,8 @@ import java.sql.Timestamp;
 import java.util.UUID;
 
 public record Message(UUID uuid, Room room, Client client, String content, Timestamp timestamp) {
+    @Override
+    public String toString() {
+        return "Client: " + client.getPseudo() + " | Room: " + room.getRoomName() + " | Message: " + content + " | Timestamp: " + timestamp;
+    }
 }

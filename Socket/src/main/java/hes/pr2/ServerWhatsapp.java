@@ -3,6 +3,8 @@ package hes.pr2;
 
 import hes.pr2.BroadcastManager.BroadCastManager;
 import hes.pr2.RoomManager.RoomManager;
+import hes.pr2.command.CommandHandler;
+import hes.pr2.command.RoomCommandReceiver;
 import hes.pr2.model.client.Client;
 import hes.pr2.model.room.Room;
 
@@ -20,8 +22,10 @@ public class ServerWhatsapp {
     // On les met ici pour qu'ils soient accessibles par toutes les méthodes
     public final RoomManager roomManager = new RoomManager();
     private final BroadCastManager broadCastManager = new BroadCastManager(roomManager);
+    RoomCommandReceiver roomCommandReceiver = new RoomCommandReceiver();
+    private final CommandHandler commandHandler = new hes.pr2.command.CommandHandler(roomManager, broadCastManager, roomCommandReceiver);
 
-    static void main(String[] args) {
+    public static void main(String[] args) {
         ServerWhatsapp server = new ServerWhatsapp();
         server.startServer();
     }
@@ -29,6 +33,15 @@ public class ServerWhatsapp {
     public void startServer() {
         System.out.println("🚀 HyperChat démarré...");
         roomManager.initRooms();
+
+//        1. Le Scope de ServerWhatsapp.java (Le Scope "Longue durée")                                                                                                                                                                                                           LSP
+//              *   Son rôle : Gérer les connexions des clients.                                                                                                                                                                                                                       • jdtls Socket                       ▄
+//              *   Pourquoi : La boucle serverSocket.accept() est infinie. Dès qu'un client A se connecte, $
+//              le serveur doit commencer à l'écouter (dans handleClient). Mais s'il fait ça de façon bloquante,
+//              le client B ne pourra jamais se connecter !                                                                    █
+//              *   L'utilité du Scope : À chaque nouveau client, le Scope dit : "Toi, va t'occuper du client A en tâche de fond (fork())
+//              , pendant que moi je retourne à la porte d'entrée attendre le client B". Ce scope reste ouvert tant que le serveur tourne.                    ▼ Modified Files                     █
+
 
         try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
             try (ServerSocket serverSocket = new ServerSocket(8080)) {
@@ -72,10 +85,8 @@ public class ServerWhatsapp {
             // IMPORTANT : La boucle de vie du client
             String line;
             while ((line = reader.readLine()) != null) {
-                String message = reader.readLine();
-                broadCastManager.send(client, client.getRoom(), message);
-                // On utilise le broadcastManager ici
-            //    broadCastManager.broadcast("General", name + ": " + line);
+                // Au lieu de toujours envoyer un message, on délègue au CommandHandler
+                commandHandler.handle(client, line);
             }
 
         } catch (IOException e) {
