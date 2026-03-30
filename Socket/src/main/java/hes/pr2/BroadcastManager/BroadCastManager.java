@@ -34,7 +34,7 @@ public class BroadCastManager {
                 for (Client client : roomToSend.getClients()) {
                     if (!client.equals(sender)) {
                         scope.fork(() -> {
-                            client.writer.println(msg.toString());
+                            client.writer.println(msg);
                             return null;
                         });
                     }

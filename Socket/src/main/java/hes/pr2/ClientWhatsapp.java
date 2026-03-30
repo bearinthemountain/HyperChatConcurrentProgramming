@@ -5,6 +5,7 @@ import java.net.*;
 import java.util.Scanner;
 
 public class ClientWhatsapp {
+    //Ne oas trop s'attarder sur cette classe car uniquement pour test unique
     public static void main(String[] args) {
         String host = "localhost"; // L'adresse du serveur
         int port = 8080;           // Le port défini dans ton serveur

@@ -45,12 +45,12 @@ public class ServerWhatsapp {
 //              , pendant que moi je retourne à la porte d'entrée attendre le client B". Ce scope reste ouvert tant que le serveur tourne.                    ▼ Modified Files                     █
 
 
-        try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+        try (var scope = new StructuredTaskScope.ShutdownOnFailure()) { //Scope shut down on failure
             try (ServerSocket serverSocket = new ServerSocket(8080)) {
                 while (!Thread.currentThread().isInterrupted()) {
                     Socket clientSocket = serverSocket.accept();
 
-                    // Ici, handleClient a accès à roomManager car ils sont dans la même classe
+                    //create sub task on the primary task
                     scope.fork(() -> {
                         handleClient(clientSocket);
                         return null;
@@ -60,9 +60,10 @@ public class ServerWhatsapp {
                 scope.shutdown();
                 throw e;
             }
+            //scope close automaticaly called
             scope.join().throwIfFailed();
         } catch (Exception e) {
-            System.err.println("Serveur arrêté : " + e.getMessage());
+            System.err.println("Serveur stopped : " + e.getMessage());
         }
     }
 
@@ -82,7 +83,7 @@ public class ServerWhatsapp {
             client.writer = writer;
             roomManager.join(client, "Général");
 
-            writer.println("Bienvenue " + name);
+            writer.println("Welcome " + name);
 
             // IMPORTANT : La boucle de vie du client
             String line;
@@ -92,7 +93,7 @@ public class ServerWhatsapp {
             }
 
         } catch (IOException e) {
-            System.out.println("Client déconnecté.");
+            System.out.println("Client disconnected.");
         }
     }
 }
