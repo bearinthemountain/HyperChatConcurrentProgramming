@@ -12,10 +12,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class LoadTester {
 
     // Nombre de clients à simuler
-    private static final int NUM_CLIENTS = 10000;
+    private static final int NUM_CLIENTS = 1000;
     private static final String SERVER_IP = "localhost";
     private static final int SERVER_PORT = 8080;
-    
+    private static final AtomicInteger totalMessagesReceived = new AtomicInteger(0);
+
+
     // Compteur thread-safe pour savoir combien de bots sont connectés
     private static final AtomicInteger connectedCount = new AtomicInteger(0);
 
@@ -65,6 +67,11 @@ public class LoadTester {
                     while (in.readLine() != null) {
                         // On lit le message, mais on l'ignore silencieusement 
                         // (sinon 10 000 bots qui impriment dans la console, ça va freeze ton PC)
+                        int msgCount = totalMessagesReceived.incrementAndGet();
+                        // On affiche un résumé tous les 50 000 messages pour voir le trafic global
+                        if (msgCount % 5000 == 0) {
+                            System.out.println("📊 [TRAFIC] " + msgCount + " messages ont été reçus au total sur le réseau !");
+                        }
                     }
                 } catch (Exception e) {
                     // Silencieux à la déconnexion

@@ -30,6 +30,8 @@ public class ServerWhatsapp {
         server.startServer();
     }
 
+
+
     public void startServer() {
         System.out.println("🚀 HyperChat démarré...");
         roomManager.initRooms();
