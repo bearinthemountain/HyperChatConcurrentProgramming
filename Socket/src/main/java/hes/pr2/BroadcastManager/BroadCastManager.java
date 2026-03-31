@@ -22,13 +22,25 @@ public class BroadCastManager {
         Timestamp timestamp = Timestamp.from(Instant.now());
         Message msg = new Message(UUID.randomUUID(), roomToSend, sender, message, timestamp);
 
+        /**
+         * PARALLEL MESSAGE BROADCASTING
+         * * This block handles the simultaneous distribution of a message to all clients in a room:
+         * * 1. Concurrency Model:
+         * - Uses StructuredTaskScope to broadcast messages in parallel, ensuring high
+         * performance even with many connected clients.
+         * * 2. Error Atomicity (ShutdownOnFailure):
+         * - If sending a message to one specific client fails (e.g., broken socket),
+         * the scope can trigger a shutdown to handle the broadcast failure immediately.
+         * * 3. Lifecycle Guarantee:
+         * - scope.join(): Acts as a synchronization barrier. The method will not return
+         * until every client has been processed.
+         * - throwIfFailed(): Ensures that any IOException during transmission is
+         * properly caught and logged, rather than failing silently.
+         * * 4. Thread Safety:
+         * - By forking each 'println' call, we prevent a single slow/laggy client
+         * from delaying the message delivery to other users in the room.
+         */
 
-        //     2. Le Scope de Broadcast.java (Le Scope "Courte durée / Éclair")
-        //     *   Son rôle : Gérer l'envoi d'un seul message.
-        //     *   Pourquoi : Imagine que 100 personnes sont dans le salon "Général". Si tu envoies un message en faisant une simple boucle classique, le serveur va l'envoyer au client 1, attendre qu'il soit bien envoyé, puis l'envoyer au client 2, etc. Si le client 1 a
-        //    une très mauvaise connexion (lag), tout le monde va attendre à cause de lui !
-        //     *   L'utilité du Scope : Quand un message arrive, ce Scope se crée à la volée. Il crée 100 sous-tâches (fork()) qui envoient le message aux 100 personnes exactement en même temps (en parallèle). Dès que les 100 envois sont terminés (scope.join()), le scope
-        //    se ferme instantanément.
         if (roomToSend != null) {
             try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
                 for (Client client : roomToSend.getClients()) {

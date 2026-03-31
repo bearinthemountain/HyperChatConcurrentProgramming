@@ -21,14 +21,16 @@ public class LoadTester {
     private static final AtomicInteger totalMessagesReceived = new AtomicInteger(0);
     private static final AtomicInteger connectedCount = new AtomicInteger(0);
 
-    private static final ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
+    private static final ThreadMXBean threadBean = ManagementFactory.getThreadMXBean(); //Bean to get thread information for metrics
 
     public static void main(String[] args) throws InterruptedException {
         System.out.println("Start of the load tester " + NUM_CLIENTS + " Virtual Threads...");
 
-        ScheduledExecutorService metricsReporter = Executors.newSingleThreadScheduledExecutor();
-        metricsReporter.scheduleAtFixedRate(LoadTester::printMetrics, 5, 5, TimeUnit.SECONDS);
+        ScheduledExecutorService metricsReporter = Executors.newSingleThreadScheduledExecutor(); // Separate thread for reporting metrics
+        metricsReporter.scheduleAtFixedRate(LoadTester::printMetrics, 5, 5, TimeUnit.SECONDS); //Show metric every 5 seconds
 
+
+        //Create a virtual thread for each bot and start them, the try with resource ensure that all the thread will be closed when the test is done
         try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
             for (int i = 1; i <= NUM_CLIENTS; i++) {
                 final int botId = i;
@@ -44,13 +46,14 @@ public class LoadTester {
         }
     }
 
+    // This method print the metrics of the server, it is called every 5 seconds by the metricsReporter
     private static void printMetrics() {
-        Runtime rt = Runtime.getRuntime();
-        long total = rt.totalMemory();
-        long free = rt.freeMemory();
-        long max = rt.maxMemory();
-        long used = total - free;
-        int threads = threadBean.getThreadCount();
+        Runtime rt = Runtime.getRuntime(); // Get the runtime to access memory information
+        long total = rt.totalMemory(); // Total memory currently allocated to the JVM
+        long free = rt.freeMemory(); // Free memory within the allocated total (not the actual free memory of the system)
+        long max = rt.maxMemory(); // Maximum memory that the JVM will attempt to use
+        long used = total - free; // Memory currently used by the JVM
+        int threads = threadBean.getThreadCount(); // Get the current number of live threads in the JVM
 
         System.out.printf(" METRICS => threads=%d, connected=%d, messages=%d, mem_used=%.2fMB, mem_total=%.2fMB, mem_max=%.2fMB%n",
                 threads,
@@ -61,6 +64,8 @@ public class LoadTester {
                 max / 1024.0 / 1024.0);
     }
 
+
+    // This method start a bot that connect to the server, join a random room and send a message every 20-30 seconds, it also listen to the messages from the server and count them
     private static void startBot(int botId) {
         try (Socket socket = new Socket(SERVER_IP, SERVER_PORT);
              PrintWriter out = new PrintWriter(socket.getOutputStream(), true);

@@ -36,16 +36,28 @@ public class ServerWhatsapp {
         System.out.println("🚀 HyperChat démarré...");
         roomManager.initRooms();
 
-//        1. Le Scope de ServerWhatsapp.java (Le Scope "Longue durée")                                                                                                                                                                                                           LSP
-//              *   Son rôle : Gérer les connexions des clients.                                                                                                                                                                                                                       • jdtls Socket                       ▄
-//              *   Pourquoi : La boucle serverSocket.accept() est infinie. Dès qu'un client A se connecte, $
-//              le serveur doit commencer à l'écouter (dans handleClient). Mais s'il fait ça de façon bloquante,
-//              le client B ne pourra jamais se connecter !                                                                    █
-//              *   L'utilité du Scope : À chaque nouveau client, le Scope dit : "Toi, va t'occuper du client A en tâche de fond (fork())
-//              , pendant que moi je retourne à la porte d'entrée attendre le client B". Ce scope reste ouvert tant que le serveur tourne.                    ▼ Modified Files                     █
 
 
-        try (var scope = new StructuredTaskScope.ShutdownOnFailure()) { //Scope shut down on failure
+        /**
+         * STRUCTURED CONCURRENCY ARCHITECTURE
+         * * 1. Scope Policy (ShutdownOnFailure):
+         * - The scope acts as a parent guardian for all client connection tasks.
+         * - If any 'handleClient' task fails, the scope triggers a global shutdown,
+         * automatically cancelling all other active sub-tasks.
+         * * 2. Task Forking:
+         * - Each client connection is isolated into a virtual thread (sub-task).
+         * - The lifecycle of these threads is strictly bound to this 'try-with-resources' block.
+         * * 3. Synchronization (Join & Throw):
+         * - scope.join(): Essential barrier. It blocks the parent thread until all
+         * connections are closed or a failure occurs.
+         * - throwIfFailed(): Ensures that if a sub-task crashed, the exception is
+         * propagated to the parent, preventing "silent" server failures.
+         * * 4. Automatic Resource Management:
+         * - The 'try-with-resources' ensures that scope.close() is called,
+         * guaranteeing no orphan threads are left running after the server stops.
+         */
+                                //shutdown on sucess --> the scope close automaticaly when one task is done
+        try (var scope = new StructuredTaskScope.ShutdownOnFailure()) { //Scope shut down on failure if something failed in the scope
             try (ServerSocket serverSocket = new ServerSocket(8080)) {
                 while (!Thread.currentThread().isInterrupted()) {
                     Socket clientSocket = serverSocket.accept();
@@ -61,13 +73,13 @@ public class ServerWhatsapp {
                 throw e;
             }
             //scope close automaticaly called
-            scope.join().throwIfFailed();
+            scope.join().throwIfFailed(); // wait till all task are done and if one of them failed throw the exception
         } catch (Exception e) {
             System.err.println("Serveur stopped : " + e.getMessage());
         }
     }
 
-    // Pas besoin de passer roomManager en paramètre, il est déjà dans la classe !
+
     public void handleClient(Socket socketClient) {
         // Utilise try-with-resources pour fermer le socket automatiquement
         try (socketClient;
